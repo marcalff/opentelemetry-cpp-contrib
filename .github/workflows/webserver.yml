@@ -37,9 +37,9 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/buildx-cache/
-          key: apache-ubuntu-20.04-${{ github.sha }}
+          key: apache-ubuntu-22.04-${{ github.sha }}
           restore-keys: |
-            apache-ubuntu-20.04
+            apache-ubuntu-22.04
       - name: setup docker image
         run: |
           cd instrumentation/otel-webserver-module
@@ -60,6 +60,12 @@ jobs:
             cp -r /build-dependencies /otel-webserver-module/;     \
 
             ./gradlew assembleWebServerModule -DtargetSystem=ubuntu'
+
+      - name: unit test
+        run: |
+          docker exec --workdir /otel-webserver-module apache_ubuntu_container \
+            ./gradlew runTests -DtargetSystem=ubuntu
+
       - name: update cache
         run: |
           rm -rf /tmp/buildx-cache/apache_ubuntu
@@ -107,8 +113,8 @@ jobs:
             ./gradlew assembleWebServerModule'
       - name: unit test
         run: |
-          docker exec apache_centos7_container bash -c \
-            'cd /otel-webserver-module; ./gradlew runUnitTest'
+          docker exec --workdir /otel-webserver-module apache_centos7_container \
+            ./gradlew runTests
       # - name: update cache
       #   run: |
       #     rm -rf /tmp/buildx-cache/apache_centos7
@@ -177,8 +183,8 @@ jobs:
             ./gradlew assembleWebServerModule'
       - name: unit test
         run: |
-          docker exec apache_almalinux8_container bash -c \
-            'cd /otel-webserver-module; ./gradlew runUnitTest'
+          docker exec --workdir /otel-webserver-module apache_almalinux8_container \
+            ./gradlew runTests
       # - name: update cache
       #   run: |
       #     rm -rf /tmp/buildx-cache/apache_almalinux8
@@ -205,7 +211,6 @@ jobs:
       #     sleep 30
       #     ./gradlew :test:integration:integrationTests -i
       #     curl http://localhost:9411/api/v2/spans?serviceName=demoservice
-
 
   Codeql-build:
     permissions:
@@ -235,4 +240,3 @@ jobs:
           ./gradlew assembleWebserverModule -DtargetSystem=ubuntu --info
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
-
